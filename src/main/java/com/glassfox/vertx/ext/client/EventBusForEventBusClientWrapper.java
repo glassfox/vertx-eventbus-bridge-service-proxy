@@ -18,6 +18,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.json.JsonObject;
 import io.vertx.eventbusclient.EventBusClient;
 
 public class EventBusForEventBusClientWrapper implements EventBus {
@@ -31,7 +32,7 @@ public class EventBusForEventBusClientWrapper implements EventBus {
 	
 	@Override
 	public EventBus send(String address, @Nullable Object message) {
-		client.send(address, message);
+		client.send(address, message instanceof JsonObject ? ((JsonObject)message).getMap() : message);
 		return this;
 	}
 
@@ -45,7 +46,8 @@ public class EventBusForEventBusClientWrapper implements EventBus {
 	
 	@Override
 	public EventBus send(String address, @Nullable Object message, DeliveryOptions options) {
-		client.send(address, message, parseOptions(options));
+		logger.debug("send");
+		client.send(address, message instanceof JsonObject ? ((JsonObject)message).getMap() : message, parseOptions(options));
 		return this;
 	}
 
@@ -55,9 +57,12 @@ public class EventBusForEventBusClientWrapper implements EventBus {
 	
 	@Override
 	public <T> Future<Message<T>> request(String address, @Nullable Object message, DeliveryOptions options) {
+		logger.debug("request({})", message.getClass());
 		Promise<io.vertx.eventbusclient.Message<T>> p = Promise.promise();
+		var msg = message instanceof JsonObject ? ((JsonObject)message).getMap() : message;
 		
-		client.<T>request(address, message, parseOptions(options), res -> {
+		logger.debug(msg);
+		client.<T>request(address, msg, parseOptions(options), res -> {
 			if(res.failed()) 
 				p.fail(res.cause()); 
 			else 

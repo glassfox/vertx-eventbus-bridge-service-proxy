@@ -9,4 +9,10 @@ public interface MyService {
 	final String SERVICE_ADDRESS = "service.glassfox.my"; 
 
 	Future<JsonObject> status();
+	
+	Future<JsonObject> echo(JsonObject json);
+	
+	Future<String> getString();
+	
+	Future<Void> doSomething();
 }

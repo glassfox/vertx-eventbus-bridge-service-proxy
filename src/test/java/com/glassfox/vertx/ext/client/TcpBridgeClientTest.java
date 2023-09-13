@@ -27,20 +27,62 @@ public class TcpBridgeClientTest {
 	}
 
 	@Test
-	void testService(VertxTestContext testContext) throws Exception {
+	void testEcho(VertxTestContext testContext) throws Exception {
 		var options = new EventBusClientOptions()
 			      .setHost("127.0.0.1")
 			      .setPort(TcpBridgeMyVerticle.SERVICE_PORT);
-		EventBusClient eventBusClient = EventBusClient.tcp(options);
+		EventBusClient eventBusClient = EventBusClient.tcp(options, new JsonObjectCodec());
+		
+		JsonObject expectedJson = new JsonObject();
+		expectedJson.put("foo", "bar");
 		
 		var instance = new ServiceProxyBuilder(new VertxForEventBusClientWrapper(eventBusClient))
 				.setAddress(MyService.SERVICE_ADDRESS).build(MyService.class);
 		
-		instance.status()
+		instance.echo(expectedJson)
 		.map(j-> { 
-			Assertions.assertEquals(new JsonObject(), j); 
+			Assertions.assertEquals(expectedJson, j); 
 			return null;
 		})
+		.onComplete(res -> eventBusClient.close())
+		.onComplete(testContext.succeedingThenComplete());
+	}
+	
+	@Test
+	void testGetString(VertxTestContext testContext) throws Exception {
+		var options = new EventBusClientOptions()
+			      .setHost("127.0.0.1")
+			      .setPort(TcpBridgeMyVerticle.SERVICE_PORT);
+		EventBusClient eventBusClient = EventBusClient.tcp(options, new JsonObjectCodec());
+		
+		var instance = new ServiceProxyBuilder(new VertxForEventBusClientWrapper(eventBusClient))
+				.setAddress(MyService.SERVICE_ADDRESS).build(MyService.class);
+		
+		instance.getString()
+		.map(s-> { 
+			Assertions.assertEquals(MyServiceImpl.STRING_RESULT, s); 
+			return null;
+		})
+		.onComplete(res -> eventBusClient.close())
+		.onComplete(testContext.succeedingThenComplete());
+	}
+	
+	@Test
+	void testDoSomething(VertxTestContext testContext) throws Exception {
+		var options = new EventBusClientOptions()
+			      .setHost("127.0.0.1")
+			      .setPort(TcpBridgeMyVerticle.SERVICE_PORT);
+		EventBusClient eventBusClient = EventBusClient.tcp(options, new JsonObjectCodec());
+		
+		var instance = new ServiceProxyBuilder(new VertxForEventBusClientWrapper(eventBusClient))
+				.setAddress(MyService.SERVICE_ADDRESS).build(MyService.class);
+		
+		instance.doSomething()
+		.map(nil -> { 
+			Assertions.assertNull(nil); 
+			return null;
+		})
+		.onComplete(res -> eventBusClient.close())
 		.onComplete(testContext.succeedingThenComplete());
 	}
 }

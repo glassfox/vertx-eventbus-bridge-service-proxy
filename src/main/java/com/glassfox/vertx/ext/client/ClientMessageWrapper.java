@@ -34,6 +34,10 @@ public class ClientMessageWrapper<T> implements Message<T> {
 
 	@Override
 	public T body() {
+		
+		if(null == delegate.body())
+			return null;
+		
 		return (T)(new JsonObject((Map<String, Object>)delegate.body()));
 	}
 
